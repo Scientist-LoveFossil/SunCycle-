@@ -23,7 +23,7 @@ int status = WL_IDLE_STATUS;
 // Your Xively key to let you upload data
 char xivelyKey[] = "puty0ur%iv37yk3/h3r3";
 //your xively feed ID
-#define xivelyFeed 867-9305
+#define xivelyFeed 867-5309
 //datastreams
 char sensorID[] = "LIGHT_SENSOR_CHANNEL";
 char ledID[] = "LED_CHANNEL";

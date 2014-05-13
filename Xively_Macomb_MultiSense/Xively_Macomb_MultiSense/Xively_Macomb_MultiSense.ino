@@ -1,3 +1,5 @@
+#include <Adafruit_GPS.h>
+
 /*Modified from the following:
 
 ##Xively WiFi Sensor Tutorial## 
@@ -20,7 +22,7 @@ Copyright (c) 2013 Calum Barnes
 
 MPL3115A2 myPressure;
 
-TinyGPS gps;
+
 SoftwareSerial ss(2,3);
 File rawdata;
 
@@ -184,52 +186,7 @@ double Fahrenheit(double t)
 
 void Location(){
   
-  bool newData = false;
-  unsigned long chars;
-  unsigned short sentences, failed;
-
-  // Open data file
-  File rawdata = SD.open("rawdata.txt", FILE_WRITE);
-  
-  // For one second we parse GPS data and report some key values
-  for (unsigned long start = millis(); millis() - start < 1000;)
-  {
-    while (ss.available())
-    {
-      char c = ss.read();
-       // Send raw data to the terminal window
-       Serial.write(c); 
-       
-       // Send raw data to the SD card
-       if(rawdata)
-         rawdata.write(c);
-         
-      if (gps.encode(c)) 
-        newData = true;
-    }
-  }
-  // Send manipulate data to the terminal window.
-  /* 
-  if (newData)
-  {
-    float flat, flon;
-    unsigned long age;
-    gps.f_get_position(&flat, &flon, &age);
-    Serial.print("LAT=");
-    Serial.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
-    Serial.print(" LON=");
-    Serial.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
-    Serial.print(" SAT=");
-    Serial.print(gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gps.satellites());
-    Serial.print(" PREC=");
-    Serial.print(gps.hdop() == TinyGPS::GPS_INVALID_HDOP ? 0 : gps.hdop());
-  }*/
-  
-  // Send a carriage return and close the file
-  Serial.println("");
-  rawdata.write("\r");
-  rawdata.close();
-  
+ 
 }
 
 void solartracker()
