@@ -31,9 +31,9 @@ int keyIndex = 0;            // your network key Index number (needed only for W
 int status = WL_IDLE_STATUS;
  
 // Your Xively key to let you upload data
-char xivelyKey[] = "bKeZHx0198IJEpc0akjolePFZJUCFz8uuCouo1B9Oiq2vt4t";
+char xivelyKey[] = "puty0ur%iv37yk3/h3r3";
 //your xively feed ID
-#define xivelyFeed 1927926610
+#define xivelyFeed 867-5309
 //datastreams
 char sensorID[] = "LIGHT_SENSOR_CHANNEL";
 char ledID[] = "LED_CHANNEL";
