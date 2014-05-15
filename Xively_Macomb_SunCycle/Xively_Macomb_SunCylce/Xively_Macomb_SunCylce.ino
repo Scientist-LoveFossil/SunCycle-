@@ -52,9 +52,10 @@ int keyIndex = 0;            // your network key Index number (needed only for W
 int status = WL_IDLE_STATUS;
 WiFiServer server(80); 
 // Your Xively key to let you upload data
-char xivelyKey[] = "pUty0ur%1v37yK3yh3r3";
+char xivelyKey[] = "pUty0uR%1v3lyK3/h3r3";
+
 //your xively feed ID
-#define xivelyFeed   8679305
+#define xivelyFeed   8675309
 //datastreams
 char sensorID[] = "AmbientLight";
 char ledID[] = "LED";
@@ -78,8 +79,14 @@ char satID[] = "Satellites";
 #define relaydown          23
 #define relayright         24
 #define relayleft          25
-#define  extraTrackerPIN   26
+#define extraTrackerPIN    26
+#define trikeLights        28
 
+// Touch sensors
+#define homeBase           30  // Is the panel facing forward
+#define homeTop            31  // Is the panel down
+#define extremeLeft        32  // Did we go max left
+#define extremeRight       33  // Did we go max right
 
 #define DHTTYPE DHT11 
 #define DHTPin 27
@@ -137,13 +144,18 @@ void setup() {
     
   dht.begin();
   //pin setup
-  for(int pinNumber =22; pinNumber<26; pinNumber++){  
+  for(int pinNumber =22; pinNumber<27; pinNumber++){  
       pinMode(pinNumber,OUTPUT);
       digitalWrite(pinNumber, LOW);
   }  
   pinMode(sensorPin, INPUT);
   pinMode(DHTPin, INPUT);
   pinMode(ledPin, OUTPUT);
+  pinMode(trikeLights, OUTPUT);
+  
+  for (int pinNumber=30; pinNumber < 34; pinNumber++) {
+     pinMode(pinNumber, INPUT); 
+  }
   
   Serial.println("Starting single datastream upload to Xively...");
   Serial.println();
@@ -183,13 +195,22 @@ void loop() {
   }else Serial.println("HTTP Error");
   
   //write value to LED - change brightness
-  int level = feed[1].getFloat();
+/*  int level = feed[1].getFloat();
   if(level < 0){
     level = 0;
   }else if(level > 255){
     level = 255;
+  }*/
+
+  // If ambient light is too low, enable the trikes lights.
+  int level = constrain(feed[1].getFloat(), 0, 255);
+  //level = constrain(level, 0, 255);
+  if (level < 30) {
+    digitalWrite(trikeLights, HIGH); // Turn on the lights
+  } else {
+    digitalWrite(trikeLights, LOW);  // Turn the lights off
   }
-  //actually write the value
+  // Write the value
   digitalWrite(ledPin, level);
  
 ///////////////////////////////////////////////////////
@@ -237,9 +258,46 @@ double Fahrenheit(double t)
 	//return 1.8 * t + 32;
 }
 
+String side = "none";
+int lastRun = 0;
 
 void solartracker()
 {
+  // Check every 15 minutes for change. 
+  if ( (lastRun - millis() ) < 900000 ) {
+    return;  // Cannot run yet
+  } else {
+   
+  lastRun = millis();  
+  int HB, HT, EL, ER;  // Home base, home top, extreme left, extreme right
+  int notDone = 1;
+  // If in motion ensure the system is down or put it down
+  if (GPS.speed > 0 && ( ( HB = digitalRead(homeBase) == LOW) || (HT = digitalRead(homeTop) == LOW ) ) ) {
+    while (notDone) {
+     if (HB == LOW) {
+      if (side == "left") {
+       digitalWrite(relayleft, LOW);
+       digitalWrite(relayright, HIGH);
+      } 
+      else if (side == "right")
+      {
+       digitalWrite(relayleft, HIGH);
+       digitalWrite(relayright, LOW);
+      }
+    }
+     if (HT == LOW) {
+      digitalWrite(relayup, LOW);
+      digitalWrite(relaydown, HIGH); 
+     }
+     HB = digitalRead(homeBase);
+     HT = digitalRead(homeTop);
+     if ( ( HT == HIGH ) && (HB == HIGH) ) { notDone = 0;}
+    }
+    return; // Do not continue on if speed is higher than 0
+  }
+  
+  
+  notDone = 1;  // Recycle the variable
   int top = analogRead(ldtop); // Top of panel
   int bot = analogRead(ldbot); // Bottom of Panel
   int lef = analogRead(ldlef); // Left side of Panel
@@ -257,49 +315,54 @@ void solartracker()
   Serial.print("\t");
   Serial.print("RIGHT  ");
   Serial.println(rig);
- 
-  if(top > bot)
-{  
-  digitalWrite(relayup, LOW);
-  digitalWrite(relaydown, HIGH);
-  delay (10);
-}
-  else if(top < bot)
-{
-  digitalWrite(relayup, HIGH);
-  digitalWrite(relaydown, LOW);
-  delay (10); 
-}
-  else if (top == bot)
-{
-  digitalWrite(relayup, LOW);
-  digitalWrite(relaydown, LOW);
-  delay (10);  
   
+  int sidesDone = 0;
+  int topDone = 0;
+  while (notDone) {
+    if (top > bot)
+    {
+      digitalWrite(relayup, LOW);
+      digitalWrite(relaydown, HIGH);
+    }
+    else if (top < bot) 
+    {
+     digitalWrite(relayup, HIGH);
+     digitalWrite(relaydown, LOW); 
+    }
+    else if (top == bot) // Equalized!
+    {
+      digitalWrite(relayup, LOW);
+      digitalWrite(relaydown, LOW);
+    }
+    
+    HB = digitalRead(homeBase);
+    if (lef > rig && !sidesDone)
+    {
+      if (EL = digitalRead(extremeLeft) == HIGH) { sidesDone = 1; continue; }  // Cannot move left any more, side movement done
+      if (HB == HIGH) { side = "left"; }
+      digitalWrite(relayright, LOW);
+      digitalWrite(relayleft, HIGH);
+    }
+    else if (lef < rig && !sidesDone)
+    {
+      if (ER = digitalRead(extremeRight) == HIGH) {sidesDone = 1; continue; } // Cannot move right any more, side movement done
+      if (HB == HIGH) { side = "right"; }
+      digitalWrite(relayleft, LOW);
+      digitalWrite(relayright, HIGH);
+    }
+    else if ( rig == lef)
+    {
+      sidesDone = 1;
+      side = "none";
+      digitalWrite(relayleft, LOW);
+      digitalWrite(relayright, LOW);
+    }
+       
+    if ( ( top == bot ) && (lef == rig) ) { notDone = 0;}
   }
-    if(lef > rig)
-{  
-  digitalWrite(relayright, LOW);
-  digitalWrite(relayleft, HIGH);
-  delay (10);
+ }
 }
-  else if(lef < rig)
-{
-  digitalWrite(relayright, HIGH);
-  digitalWrite(relayleft, LOW);
-  delay (10); 
-}
-  else if (lef == rig)
-{
-  digitalWrite(relayright, LOW);
-  digitalWrite(relayleft, LOW);
-  delay (10);
-  
-  
-  
-  }
 
-}
 
 
 void compass() 
