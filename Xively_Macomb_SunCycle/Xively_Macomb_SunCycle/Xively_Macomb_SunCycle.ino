@@ -1,20 +1,29 @@
 
-/*Macomb Suncycle by K.Cole, R.Shirley, A.Distel
-/*Modified from the following:
+/*Macomb Suncycle by K.Cole, R.Shirley, A.Distel. 
+/*Modified and mutated from the following:
 
 ##Xively WiFi Sensor Tutorial## 
 By Calum Barnes 3-4-2013
 BSD 3-Clause License - [http://opensource.org/licenses/BSD-3-Clause]
 Copyright (c) 2013 Calum Barnes
 
+Adafruit GPS parsing example, DHT tester - ladyada
 
+MPL3115A2 Barometric Pressure Sensor Library Example Code
+By: Nathan Seidle
+SparkFun Electronics
+Date: September 24th, 2013
+
+library example for the HMC5883 magnentometer/compass
+Written by Kevin Townsend for Adafruit Industries with some heading example from
+  Love Electronics (loveelectronics.co.uk)
 */
 #include <Adafruit_GPS.h>
 #include <Wire.h>
 #include "MPL3115A2.h"
 #include <SoftwareSerial.h>
 #include <SD.h>
-#include <TinyGPS.h>
+
 #include <SPI.h>
 #include <WiFi.h>
 #include <HttpClient.h>
@@ -213,11 +222,23 @@ void loop() {
   // Write the value
   digitalWrite(ledPin, level);
  
-///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
   //read sensor values
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   float pressure = myPressure.readPressure();
+  float temperature = myPressure.readTempF();  // needed for adjustment of Barometer
+  const int station_elevation_m = 188; // MCC's elevation in meters on placekeeper.com
+  //1 pascal = 0.01 millibars
+  pressure /= 100; //pressure is now in millibars
+  float part1 = pressure - 0.3; //Part 1 of formula
+  const float part2 = 8.42288 / 100000.0;
+  float part3 = pow((pressure - 0.3), 0.190284);
+  float part4 = (float)station_elevation_m / part3;
+  float part5 = (1.0 + (part2 * part4));
+  float part6 = pow(part5, (1.0/0.190284));
+  float altimeter_setting_pressure_mb = part1 * part6; //Output is now in adjusted millibars
+  float baroin = altimeter_setting_pressure_mb * 0.02953;
   int sensorValue = analogRead(sensorPin);
    
  
@@ -225,9 +246,10 @@ void loop() {
   datastreams[0].setFloat(sensorValue);
    datastreams[2].setFloat(Fahrenheit(t));
     datastreams[3].setFloat(h);
-      datastreams[4].setFloat(pressure);   //datastream 5 is in compass routine
-        compass();
-        gps();
+      datastreams[4].setFloat(baroin);  
+        compass();  //datastream 5 is in compass routine. Doing calculations in function instead of up top.
+        gps(); // datastream 6 & 7 (sat count and speed) are in gps function
+ 
   //print the sensor valye
   client.print("Read sensor value ");
   Serial.println(datastreams[0].getFloat());
@@ -250,7 +272,7 @@ void loop() {
   solartracker();
   delay(15000);
 }
-
+//-------------------------------------------------------------------------------------------------------
 
 double Fahrenheit(double t)
 {
@@ -260,7 +282,7 @@ double Fahrenheit(double t)
 
 String side = "none";
 int lastRun = 0;
-
+//--------------------------------------------------------------------------------------------------------
 void solartracker()
 {
   // Check every 15 minutes for change. 
@@ -363,7 +385,7 @@ void solartracker()
  }
 }
 
-
+//____________________________________________________________________________________________________
 
 void compass() 
 {
@@ -402,7 +424,7 @@ void compass()
    datastreams[5].setFloat(headingDegrees);
   //delay(500);
 }
-
+//_____________________________________________________________________________________________________
 void gps(){
  
 delay(10);
@@ -465,6 +487,7 @@ uint32_t timer = millis();
     
     }
   }
+ 
 void GPSsetup()  
 {
   boolean usingInterrupt = false;
@@ -500,8 +523,15 @@ void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
   delay(1000);
   
 }
-  // Ask for firmware version
-//  mySerial.println(PMTK_Q_RELEASE);
+
+//________________________________________________________________________________
+/* These are the timer interrput functions for the gps to function 
+while everything else is going. This allows us to read from the gps while
+running the solar panel function and upload data to xively.
+This has to stay down here to compile correctly. -KC
+*/
+  
+
 SIGNAL(TIMER0_COMPA_vect) {
   char c = GPS.read();
   // if you want to debug, this is a good time to do it!
@@ -526,6 +556,4 @@ void useInterrupt(boolean v) {
     usingInterrupt = false;
   }
 }
-
-
-
+//_____________________END_OF_TIMER_FUNCTION____________________________________
