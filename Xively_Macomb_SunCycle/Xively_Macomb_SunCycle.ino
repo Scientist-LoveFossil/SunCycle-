@@ -51,8 +51,8 @@ Written by Kevin Townsend for Adafruit Industries with some heading example from
 MPL3115A2 myPressure;
 
 Adafruit_GPS GPS(&Serial1);
-boolean usingInterrupt = false;  // ADafruit GPS likes to use interrupts, which are not working well with our setup
-//void useInterrupt(boolean);
+boolean usingInterrupt = false;  // 
+void useInterrupt(boolean);     
 
 char ssid[] = "Mconnect"; //  your network SSID (name) 
 char pass[] = "";    // your network password (use for WPA, or use as key for WEP)
@@ -77,31 +77,31 @@ char satID[] = "Satellites";
 
 #define GPSECHO  true 
 
-
+//Analog pin definitions!
 #define ldtop     A10
 #define ldbot     A11
 #define ldlef     A12
 #define ldrig     A13
 #define sensorPin A14   //Ambient Light pin on A14 for temt6000
-// digital pin declarations!
-#define relayup            22
-#define relaydown          23
-#define relayright         24
-#define relayleft          25
-#define extraTrackerPIN    26
-#define trikeLights        28
 
-// Touch sensors
-#define homeBase           30  // Is the panel facing forward
-#define homeTop            31  // Is the panel down
-#define extremeLeft        32  // Did we go max left
-#define extremeRight       33  // Did we go max right
+// digital pin definitions!
+#define ledPin 		    9	//status led on wifi shield
+#define relayup            22	//These are
+#define relaydown          23	//for Rich's
+#define relayright         24	//Relay Control board
+#define relayleft          25	//for the solar panel tracking motors
 
-#define DHTTYPE DHT11 
-#define DHTPin 27
-#define ledPin 9
- 
+#define DHTPin 		   27
+#define trikeLights        28	//White undercarriage leds, controlled by mosfet
+		// Touch sensors
+#define homeBase           30	// Is the panel facing forward
+#define homeTop            31	// Is the panel down
+#define extremeLeft        32	// Did we go max left
+#define extremeRight       33	// Did we go max right
+
+#define DHTTYPE DHT11 // We are using the cheap blue DHT11 variety of Digital Temperature Humidity sensors
 DHT dht(DHTPin, DHTTYPE);
+
 // Define the strings for our datastream IDs
 XivelyDatastream datastreams[] = {
   XivelyDatastream(sensorID, strlen(sensorID), DATASTREAM_FLOAT),   //0
