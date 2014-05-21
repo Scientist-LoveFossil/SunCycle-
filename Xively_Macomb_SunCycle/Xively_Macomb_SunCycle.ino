@@ -1,7 +1,7 @@
 
 /*Macomb Suncycle by K.Cole, R.Shirley, A.Distel.   ####Rich- your solartracking subroutine is stuck in a loop. Race condition?###
 /*Modified and mutated from the following:          ####  I commented it out for now - KC                                      ###
-
+/ Theres some weird stuff being added to this git. Delete or comment out anything with a <<<<<<<<   
 ##Xively WiFi Sensor Tutorial## 
 By Calum Barnes 3-4-2013
 BSD 3-Clause License - [http://opensource.org/licenses/BSD-3-Clause]
@@ -51,8 +51,8 @@ Written by Kevin Townsend for Adafruit Industries with some heading example from
 MPL3115A2 myPressure;
 
 Adafruit_GPS GPS(&Serial1);
-boolean usingInterrupt = false;  // 
-void useInterrupt(boolean);     
+boolean usingInterrupt = false;  // ADafruit GPS likes to use interrupts, which are not working well with our setup
+//void useInterrupt(boolean);
 
 char ssid[] = "Mconnect"; //  your network SSID (name) 
 char pass[] = "";    // your network password (use for WPA, or use as key for WEP)
@@ -77,31 +77,6 @@ char satID[] = "Satellites";
 
 #define GPSECHO  true 
 
-<<<<<<< HEAD
-//Analog pin definitions!
-#define ldtop     A10
-#define ldbot     A11
-#define ldlef     A12
-#define ldrig     A13
-#define sensorPin A14   //Ambient Light pin on A14 for temt6000
-
-// digital pin definitions!
-#define ledPin 		    9	//status led on wifi shield
-#define relayup            22	//These are
-#define relaydown          23	//for Rich's
-#define relayright         24	//Relay Control board
-#define relayleft          25	//for the solar panel tracking motors
-
-#define DHTPin 		   27
-#define trikeLights        28	//White undercarriage leds, controlled by mosfet
-		// Touch sensors
-#define homeBase           30	// Is the panel facing forward
-#define homeTop            31	// Is the panel down
-#define extremeLeft        32	// Did we go max left
-#define extremeRight       33	// Did we go max right
-
-#define DHTTYPE DHT11 // We are using the cheap blue DHT11 variety of Digital Temperature Humidity sensors
-=======
 
 #define ldtop     A10    //Red wire from Relay for solar tracking motors
 #define ldbot     A11    //Brown
@@ -127,9 +102,7 @@ char satID[] = "Satellites";
 
 #define ledPin 9
  
->>>>>>> Commented Out Race Condition- Solar Tracking function
 DHT dht(DHTPin, DHTTYPE);
-
 // Define the strings for our datastream IDs
 XivelyDatastream datastreams[] = {
   XivelyDatastream(sensorID, strlen(sensorID), DATASTREAM_FLOAT),   //0
