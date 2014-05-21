@@ -1,6 +1,6 @@
 
-/*Macomb Suncycle by K.Cole, R.Shirley, A.Distel. 
-/*Modified and mutated from the following:
+/*Macomb Suncycle by K.Cole, R.Shirley, A.Distel.   ####Rich- your solartracking subroutine is stuck in a loop. Race condition?###
+/*Modified and mutated from the following:          ####  I commented it out for now - KC                                      ###
 
 ##Xively WiFi Sensor Tutorial## 
 By Calum Barnes 3-4-2013
@@ -59,7 +59,7 @@ char pass[] = "";    // your network password (use for WPA, or use as key for WE
 int keyIndex = 0;            // your network key Index number (needed only for WEP)
  
 int status = WL_IDLE_STATUS;
-WiFiServer server(80); 
+//WiFiServer server(80); 
 // Your Xively key to let you upload data
 char xivelyKey[] = "pUty0uR%1v3lyK3/h3r3";
 
@@ -77,6 +77,7 @@ char satID[] = "Satellites";
 
 #define GPSECHO  true 
 
+<<<<<<< HEAD
 //Analog pin definitions!
 #define ldtop     A10
 #define ldbot     A11
@@ -100,6 +101,33 @@ char satID[] = "Satellites";
 #define extremeRight       33	// Did we go max right
 
 #define DHTTYPE DHT11 // We are using the cheap blue DHT11 variety of Digital Temperature Humidity sensors
+=======
+
+#define ldtop     A10    //Red wire from Relay for solar tracking motors
+#define ldbot     A11    //Brown
+#define ldlef     A12    //Green
+#define ldrig     A13    //Blue
+#define sensorPin A14   //Ambient Light pin on A14 for temt6000
+// digital pin declarations!
+#define relayup            22 //Purple wire from photosensor cable
+#define relaydown          23 //Grey 
+#define relayright         24 //Brown
+#define relayleft          25 //Blue from photosensor cable
+#define extraTrackerPIN    26
+#define DHTPin             27
+#define trikeLights        28
+
+// Touch sensors
+#define homeBase           30  // Is the panel facing forward
+#define homeTop            31  // Is the panel down
+#define extremeLeft        32  // Did we go max left
+#define extremeRight       33  // Did we go max right
+
+#define DHTTYPE DHT11 
+
+#define ledPin 9
+ 
+>>>>>>> Commented Out Race Condition- Solar Tracking function
 DHT dht(DHTPin, DHTTYPE);
 
 // Define the strings for our datastream IDs
@@ -143,8 +171,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   Wire.begin(); 
-  server.begin();                           // start the web server on port 80
-  printWifiStatus();  
+ // server.begin();                           // start the web server on port 80
+
   myPressure.begin();
       myPressure.setModeBarometer(); // Measure pressure in Pascals from 20 to 110 kPa
       myPressure.setOversampleRate(7); // Set Oversample to the recommended 128
@@ -251,7 +279,7 @@ void loop() {
         gps(); // datastream 6 & 7 (sat count and speed) are in gps function
  
   //print the sensor valye
-  client.print("Read sensor value ");
+  Serial.print("Read sensor value ");
   Serial.println(datastreams[0].getFloat());
   Serial.println(datastreams[2].getFloat());
   Serial.println(datastreams[3].getFloat());
@@ -269,7 +297,7 @@ void loop() {
   
   
   //delay between calls
-  solartracker();
+  //solartracker();
   delay(15000);
 }
 //-------------------------------------------------------------------------------------------------------
@@ -280,11 +308,12 @@ double Fahrenheit(double t)
 	//return 1.8 * t + 32;
 }
 
-String side = "none";
-int lastRun = 0;
+
 //--------------------------------------------------------------------------------------------------------
 void solartracker()
 {
+  String side = "none";
+int lastRun = 0;
   // Check every 15 minutes for change. 
   if ( (lastRun - millis() ) < 900000 ) {
     return;  // Cannot run yet
@@ -294,7 +323,7 @@ void solartracker()
   int HB, HT, EL, ER;  // Home base, home top, extreme left, extreme right
   int notDone = 1;
   // If in motion ensure the system is down or put it down
-  if (GPS.speed > 0 && ( ( HB = digitalRead(homeBase) == LOW) || (HT = digitalRead(homeTop) == LOW ) ) ) {
+  if (GPS.speed > 1 && ( ( HB = digitalRead(homeBase) == LOW) || (HT = digitalRead(homeTop) == LOW ) ) ) {
     while (notDone) {
      if (HB == LOW) {
       if (side == "left") {
@@ -381,9 +410,9 @@ void solartracker()
     }
        
     if ( ( top == bot ) && (lef == rig) ) { notDone = 0;}
+    }
   }
  }
-}
 
 //____________________________________________________________________________________________________
 
@@ -435,7 +464,7 @@ uint32_t timer = millis();
   // need to 'hand query' the GPS, not suggested :(
   if (! usingInterrupt) {
     // read data from the GPS in the 'main loop'
-    char c = GPS.read();
+    //char c = GPS.read();
     // if you want to debug, this is a good time to do it!
     //if (GPSECHO)
       //if (c) Serial.print(c);
@@ -484,6 +513,7 @@ uint32_t timer = millis();
       float speedmph = GPS.speed*1.15078;
       datastreams[6].setFloat(speedmph);
       datastreams[7].setFloat(sat);
+      datastreams[8].setFloat(GPS.lat);
     
     }
   }
@@ -520,7 +550,7 @@ void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
   // loop code a heck of a lot easier!
   useInterrupt(true);
 
-  delay(1000);
+  delay(5000);
   
 }
 
