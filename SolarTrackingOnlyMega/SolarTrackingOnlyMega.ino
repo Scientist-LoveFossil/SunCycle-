@@ -29,11 +29,11 @@ void setup(){
 void loop(){
   String side = "none";
 int lastRun = 0;
- //int lastRun = millis() 
+
   // Check every 15 minutes for change. 
-  //if ( (lastRun - millis() ) < 900000 ) {
-    //return;  // Cannot run yet
-  //} else {
+  if ( (lastRun - millis() ) < 900000 ) {
+    return;  // Cannot run yet
+  } else {
    
   //lastRun = millis();  
   int HB, HT, EL, ER;  // Home base, home top, extreme left, extreme right
@@ -128,4 +128,4 @@ int lastRun = 0;
     if ( ( top == bot ) && (lef == rig) ) { notDone = 0;}
   }
  }
-//}
+}

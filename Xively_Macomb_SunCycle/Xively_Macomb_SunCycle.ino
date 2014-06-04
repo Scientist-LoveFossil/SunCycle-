@@ -93,10 +93,10 @@ char satID[] = "Satellites";
 #define trikeLights        28
 
 // Touch sensors
-#define homeBase           30  // Is the panel facing forward
-#define homeTop            31  // Is the panel down
-#define extremeLeft        32  // Did we go max left
-#define extremeRight       33  // Did we go max right
+#define LimitUp           30  // Is the panel facing forward
+#define LimitDown            31  // Is the panel down
+#define limitLeft        32  // Did we go max left
+#define limitRight       33  // Did we go max right
 
 #define DHTTYPE DHT11 
 
@@ -214,11 +214,13 @@ void loop() {
 
   // If ambient light is too low, enable the trikes lights.
   int level = constrain(feed[1].getFloat(), 0, 255);
-  //level = constrain(level, 0, 255);
+ // level = constrain(level, 0, 255);
   if (level < 30) {
-    digitalWrite(trikeLights, HIGH); // Turn on the lights
+    digitalWrite(trikeLights, HIGH);
+   digitalWrite(ledPin, HIGH); // Turn on the lights
   } else {
-    digitalWrite(trikeLights, LOW);  // Turn the lights off
+    digitalWrite(trikeLights, LOW);
+    digitalWrite(ledPin, LOW);  // Turn the lights off
   }
   // Write the value
   digitalWrite(ledPin, level);
@@ -296,7 +298,7 @@ int lastRun = 0;
   int HB, HT, EL, ER;  // Home base, home top, extreme left, extreme right
   int notDone = 1;
   // If in motion ensure the system is down or put it down
-  if (GPS.speed > 1 && ( ( HB = digitalRead(homeBase) == LOW) || (HT = digitalRead(homeTop) == LOW ) ) ) {
+  if (GPS.speed > 1 && ( ( HB = digitalRead(LimitUp) == LOW) || (HT = digitalRead(LimitDown) == LOW ) ) ) {
     while (notDone) {
      if (HB == LOW) {
       if (side == "left") {
@@ -313,8 +315,8 @@ int lastRun = 0;
       digitalWrite(relayup, LOW);
       digitalWrite(relaydown, HIGH); 
      }
-     HB = digitalRead(homeBase);
-     HT = digitalRead(homeTop);
+     HB = digitalRead(LimitUp);
+     HT = digitalRead(LimitDown);
      if ( ( HT == HIGH ) && (HB == HIGH) ) { notDone = 0;}
     }
     return; // Do not continue on if speed is higher than 0
@@ -326,7 +328,10 @@ int lastRun = 0;
   int bot = analogRead(ldbot); // Bottom of Panel
   int lef = analogRead(ldlef); // Left side of Panel
   int rig = analogRead(ldrig); //Right side of Panel
+  int tol = 25;                // Added a tolerance to photosensor values so we won't continually chase the tiny variations.
   
+  int dvert = top - bot; // check the diffirence of up and down
+  int dhoriz = lef - rig;// check the diffirence of left and right
   
   Serial.println("TOP  ");
   Serial.print(top);
@@ -343,6 +348,7 @@ int lastRun = 0;
   int sidesDone = 0;
   int topDone = 0;
   while (notDone) {
+    if (-1*tol > dvert || dvert > tol)
     if (top > bot)
     {
       digitalWrite(relayup, LOW);
@@ -359,17 +365,18 @@ int lastRun = 0;
       digitalWrite(relaydown, LOW);
     }
     
-    HB = digitalRead(homeBase);
+    HB = digitalRead(LimitUp);
+    if (-1*tol > dhoriz || dhoriz > tol){
     if (lef > rig && !sidesDone)
     {
-      if (EL = digitalRead(extremeLeft) == HIGH) { sidesDone = 1; continue; }  // Cannot move left any more, side movement done
+      if (EL = digitalRead(limitLeft) == HIGH) { sidesDone = 1; continue; }  // Cannot move left any more, side movement done
       if (HB == HIGH) { side = "left"; }
       digitalWrite(relayright, LOW);
       digitalWrite(relayleft, HIGH);
     }
     else if (lef < rig && !sidesDone)
     {
-      if (ER = digitalRead(extremeRight) == HIGH) {sidesDone = 1; continue; } // Cannot move right any more, side movement done
+      if (ER = digitalRead(limitRight) == HIGH) {sidesDone = 1; continue; } // Cannot move right any more, side movement done
       if (HB == HIGH) { side = "right"; }
       digitalWrite(relayleft, LOW);
       digitalWrite(relayright, HIGH);
@@ -384,9 +391,9 @@ int lastRun = 0;
        
     if ( ( top == bot ) && (lef == rig) ) { notDone = 0;}
     }
-  }
+  } delay (2000);
  }
-
+}
 //____________________________________________________________________________________________________
 
 void compass() 
@@ -437,7 +444,7 @@ uint32_t timer = millis();
   // need to 'hand query' the GPS, not suggested :(
   if (! usingInterrupt) {
     // read data from the GPS in the 'main loop'
-    //char c = GPS.read();
+    char c = GPS.read();
     // if you want to debug, this is a good time to do it!
     //if (GPSECHO)
       //if (c) Serial.print(c);
@@ -455,11 +462,11 @@ uint32_t timer = millis();
   }
 
   // if millis() or timer wraps around, we'll just reset it
- // if (timer > millis())  timer = millis();
+  if (timer > millis())  timer = millis();
 
   // approximately every 2 seconds or so, print out the current stats
- // if (millis() - timer > 2000) { 
-   // timer = millis(); // reset the timer
+ if (millis() - timer > 4000) { 
+   timer = millis(); // reset the timer
     
     Serial.print("\nTime: ");
     Serial.print(GPS.hour, DEC); Serial.print(':');
@@ -490,7 +497,7 @@ uint32_t timer = millis();
     
     }
   }
- 
+}
 void GPSsetup()  
 {
   boolean usingInterrupt = false;
