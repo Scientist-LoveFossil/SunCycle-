@@ -1,7 +1,8 @@
 
 /*Macomb Suncycle by K.Cole, R.Shirley, A.Distel.   ####Rich- your solartracking subroutine is stuck in a loop. Race condition?###
-/*Modified and mutated from the following:          ####  I commented it out for now - KC                                      ###
+/*Modified and mutated from the following:          ####  I made this a separate tab -KC                                 ###
 / Theres some weird stuff being added to this git. Delete or comment out anything with a <<<<<<<<   
+
 ##Xively WiFi Sensor Tutorial## 
 By Calum Barnes 3-4-2013
 BSD 3-Clause License - [http://opensource.org/licenses/BSD-3-Clause]
@@ -18,6 +19,7 @@ library example for the HMC5883 magnentometer/compass
 Written by Kevin Townsend for Adafruit Industries with some heading example from
   Love Electronics (loveelectronics.co.uk)
 */
+
 #include <Adafruit_GPS.h>
 #include <Wire.h>
 #include "MPL3115A2.h"
@@ -74,8 +76,12 @@ char baromID[] = "Barometer";
 char headingID[] = "Heading";
 char speedID[] = "Speed";
 char satID[] = "Satellites";
+char latID[] = "lat";
+char lonID[] = "lon";
 
-#define GPSECHO  true 
+// Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
+// Set to 'true' if you want to debug and listen to the raw GPS sentences.
+#define GPSECHO  false 
 
 
 #define ldtop     A10    //Red wire from Relay for solar tracking motors
@@ -93,8 +99,8 @@ char satID[] = "Satellites";
 #define trikeLights        28
 
 // Touch sensors
-#define LimitUp           30  // Is the panel facing forward
-#define LimitDown            31  // Is the panel down
+#define LimitUp          30  // Is the panel facing forward
+#define LimitDown        31  // Is the panel down
 #define limitLeft        32  // Did we go max left
 #define limitRight       33  // Did we go max right
 
@@ -112,10 +118,12 @@ XivelyDatastream datastreams[] = {
   XivelyDatastream(baromID, strlen(baromID), DATASTREAM_FLOAT),     //4
   XivelyDatastream(headingID, strlen(headingID), DATASTREAM_FLOAT), //5
   XivelyDatastream(speedID, strlen(speedID), DATASTREAM_FLOAT),     //6
-  XivelyDatastream(satID, strlen(satID), DATASTREAM_FLOAT),         //7
+  XivelyDatastream(satID, strlen(satID), DATASTREAM_FLOAT),         //7 
+  XivelyDatastream(latID, strlen(latID), DATASTREAM_FLOAT),         //8
+  XivelyDatastream(lonID, strlen(lonID), DATASTREAM_FLOAT),         //9 
 };
 
-XivelyFeed feed(xivelyFeed, datastreams, 8 /* number of datastreams */);
+XivelyFeed feed(xivelyFeed, datastreams, 10 /* number of datastreams */);
 
 WiFiClient client;
 XivelyClient xivelyclient(client);
@@ -138,8 +146,8 @@ void printWifiStatus() {
  
 }
 
-
-
+unsigned long start, finish, duration;
+int counter;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -251,7 +259,8 @@ void loop() {
     datastreams[3].setFloat(h);
       datastreams[4].setFloat(baroin);  
         compass();  //datastream 5 is in compass routine. Doing calculations in function instead of up top.
-        gps(); // datastream 6 & 7 (sat count and speed) are in gps function
+        Serial.print("going to gps");
+        gps(); // datastream 6 - 9 (sat count and speed) are in gps function
  
   //print the sensor valye
   Serial.print("Read sensor value ");
@@ -271,9 +280,24 @@ void loop() {
   Serial.println("");
   
   
-  //delay between calls
-  //solartracker();
-  delay(15000);
+ 
+   delay(50);
+  SolarTracker(counter);
+  Serial.print("\t");
+  Serial.println("out of tracker function");
+  Serial.print("counter =    ");
+  Serial.print(SolarTracker(counter) );  // I made SolarTracker into a variable returning function to help with timing. This way,
+  if (SolarTracker(counter) < 390){     //  a counter within solartracker will be able to spit out its info to the main loop,
+ for (int x = 0; x < 15000; x++){      //   and we use either the 18sec delay of counter in the solar function,
+                                      //    or a 15 sec delay (x) between calls here -- KC.
+    
+   delay(1);
+  // Serial.print("     x =    ");
+  // Serial.println(x);
+  
+  } Serial.println("     delayed 15 seconds   ");
+    } else { 
+   return; }
 }
 //-------------------------------------------------------------------------------------------------------
 
@@ -285,115 +309,7 @@ double Fahrenheit(double t)
 
 
 //--------------------------------------------------------------------------------------------------------
-void solartracker()
-{
-  String side = "none";
-int lastRun = 0;
-  // Check every 15 minutes for change. 
-  if ( (lastRun - millis() ) < 900000 ) {
-    return;  // Cannot run yet
-  } else {
-   
-  lastRun = millis();  
-  int HB, HT, EL, ER;  // Home base, home top, extreme left, extreme right
-  int notDone = 1;
-  // If in motion ensure the system is down or put it down
-  if (GPS.speed > 1 && ( ( HB = digitalRead(LimitUp) == LOW) || (HT = digitalRead(LimitDown) == LOW ) ) ) {
-    while (notDone) {
-     if (HB == LOW) {
-      if (side == "left") {
-       digitalWrite(relayleft, LOW);
-       digitalWrite(relayright, HIGH);
-      } 
-      else if (side == "right")
-      {
-       digitalWrite(relayleft, HIGH);
-       digitalWrite(relayright, LOW);
-      }
-    }
-     if (HT == LOW) {
-      digitalWrite(relayup, LOW);
-      digitalWrite(relaydown, HIGH); 
-     }
-     HB = digitalRead(LimitUp);
-     HT = digitalRead(LimitDown);
-     if ( ( HT == HIGH ) && (HB == HIGH) ) { notDone = 0;}
-    }
-    return; // Do not continue on if speed is higher than 0
-  }
-  
-  
-  notDone = 1;  // Recycle the variable
-  int top = analogRead(ldtop); // Top of panel
-  int bot = analogRead(ldbot); // Bottom of Panel
-  int lef = analogRead(ldlef); // Left side of Panel
-  int rig = analogRead(ldrig); //Right side of Panel
-  int tol = 25;                // Added a tolerance to photosensor values so we won't continually chase the tiny variations.
-  
-  int dvert = top - bot; // check the diffirence of up and down
-  int dhoriz = lef - rig;// check the diffirence of left and right
-  
-  Serial.println("TOP  ");
-  Serial.print(top);
-  Serial.print("\t");
-  Serial.print("BOTTOM  ");
-  Serial.print(bot);
-  Serial.print("\t");
-  Serial.print("LEFT  ");
-  Serial.print(lef);
-  Serial.print("\t");
-  Serial.print("RIGHT  ");
-  Serial.println(rig);
-  
-  int sidesDone = 0;
-  int topDone = 0;
-  while (notDone) {
-    if (-1*tol > dvert || dvert > tol)
-    if (top > bot)
-    {
-      digitalWrite(relayup, LOW);
-      digitalWrite(relaydown, HIGH);
-    }
-    else if (top < bot) 
-    {
-     digitalWrite(relayup, HIGH);
-     digitalWrite(relaydown, LOW); 
-    }
-    else if (top == bot) // Equalized!
-    {
-      digitalWrite(relayup, LOW);
-      digitalWrite(relaydown, LOW);
-    }
-    
-    HB = digitalRead(LimitUp);
-    if (-1*tol > dhoriz || dhoriz > tol){
-    if (lef > rig && !sidesDone)
-    {
-      if (EL = digitalRead(limitLeft) == HIGH) { sidesDone = 1; continue; }  // Cannot move left any more, side movement done
-      if (HB == HIGH) { side = "left"; }
-      digitalWrite(relayright, LOW);
-      digitalWrite(relayleft, HIGH);
-    }
-    else if (lef < rig && !sidesDone)
-    {
-      if (ER = digitalRead(limitRight) == HIGH) {sidesDone = 1; continue; } // Cannot move right any more, side movement done
-      if (HB == HIGH) { side = "right"; }
-      digitalWrite(relayleft, LOW);
-      digitalWrite(relayright, HIGH);
-    }
-    else if ( rig == lef)
-    {
-      sidesDone = 1;
-      side = "none";
-      digitalWrite(relayleft, LOW);
-      digitalWrite(relayright, LOW);
-    }
-       
-    if ( ( top == bot ) && (lef == rig) ) { notDone = 0;}
-    }
-  } delay (2000);
- }
-}
+
 //____________________________________________________________________________________________________
 
 void compass() 
@@ -459,15 +375,8 @@ uint32_t timer = millis();
   
     if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
       return;  // we can fail to parse a sentence in which case we should just wait for another
-  }
+  }  // the timer from the example adafruitGPS
 
-  // if millis() or timer wraps around, we'll just reset it
-  if (timer > millis())  timer = millis();
-
-  // approximately every 2 seconds or so, print out the current stats
- if (millis() - timer > 4000) { 
-   timer = millis(); // reset the timer
-    
     Serial.print("\nTime: ");
     Serial.print(GPS.hour, DEC); Serial.print(':');
     Serial.print(GPS.minute, DEC); Serial.print(':');
@@ -493,19 +402,20 @@ uint32_t timer = millis();
       float speedmph = GPS.speed*1.15078;
       datastreams[6].setFloat(speedmph);
       datastreams[7].setFloat(sat);
-      datastreams[8].setFloat(GPS.lat);
+      datastreams[8].setFloat(GPS.latitude);
+      datastreams[9].setFloat(GPS.longitude);
     
     }
   }
-}
+//}
 void GPSsetup()  
 {
-  boolean usingInterrupt = false;
+  boolean usingInterrupt = true;
 void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy  
   // connect at 115200 so we can read the GPS fast enough and echo without dropping chars
   // also spit it out
   Serial.begin(115200);
-  Serial.println("Adafruit GPS library basic test!");
+  Serial.println("Setting up Adafruit GPS!");
 
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
