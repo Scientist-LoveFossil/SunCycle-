@@ -14,6 +14,8 @@ void Setup(){  // put your setup code here, to run once:
   for(int pinNumber =24; pinNumber<28; pinNumber++){  
       pinMode(pinNumber,OUTPUT);
       digitalWrite(pinNumber, LOW);
+      Serial.println(pinNumber++);
+      
   }  
   pinMode(AmblightPin, INPUT);
   pinMode(DHTPin, INPUT);
@@ -22,8 +24,9 @@ void Setup(){  // put your setup code here, to run once:
   
   for (int pinNumber=28; pinNumber < 32; pinNumber++) {
      pinMode(pinNumber, INPUT); 
+     
   }
-  
+ 
   Serial.println("Starting single datastream upload to Xively...");
   Serial.println();
  

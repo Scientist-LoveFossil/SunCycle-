@@ -12,33 +12,25 @@ double SolarTracker(double counter){
   int HB, HT, EL, ER;  // Home base, home top, extreme left, extreme right
   int notDone = 1;
   int homed = digitalRead(limitHome);
-  Serial.println ("Home Limit");
-  Serial.println (homed);
   // If in motion ensure the system is down or put it down
   if (GPS.speed > 0.30 && ( ( HB = digitalRead(LimitUp) == LOW) || (HT = digitalRead(LimitDown) == LOW ) ) ) {
-    while (notDone == true) {
+    while (notDone) {
      if (HB == LOW) {
       if (side == "left") {
        digitalWrite(relayleft, LOW);
        digitalWrite(relayright, HIGH);
-        Serial.println (" Limit Right ");
-      Serial.println (ER);
         } 
       else if (side == "right"){
        digitalWrite(relayleft, HIGH);
        digitalWrite(relayright, LOW);
-        Serial.println (" Limit Left ");
-      Serial.println (EL);
       }
     }
      if (HT == LOW) {
       digitalWrite(relayup, LOW);
       digitalWrite(relaydown, HIGH); 
-       Serial.println (" Limit Down ");
-      Serial.println (HT);
      }
-     digitalRead(LimitUp);
-     digitalRead(LimitDown);
+     HB = HIGH;//digitalRead(LimitUp);
+     HT = HIGH;//digitalRead(LimitDown);
      if ( ( HT == HIGH ) && (HB == HIGH) ) { notDone = 0;}
      
     }
@@ -48,7 +40,7 @@ double SolarTracker(double counter){
   }
   
   
-   // Recycle the variable
+//  notDone = 1;  // Recycle the variable
   int rup = digitalRead(relayup);  // for debugging if relay outputs are high or low
   int rdown = digitalRead(relaydown);
   int rleft = digitalRead(relayleft);
@@ -57,14 +49,14 @@ double SolarTracker(double counter){
   int bot = analogRead(ldbot); // Bottom of Panel
   int lef = analogRead(ldlef); // Left side of Panel
   int rig = analogRead(ldrig); //Right side of Panel
-  int tol = 75;                // Added a tolerance to photosensor values so we won't continually chase the tiny variations.
+  int tol = 25;                // Added a tolerance to photosensor values so we won't continually chase the tiny variations.
   
   int dvert = top - bot; // check the diffirence of up and down
   int dhoriz = lef - rig;// check the diffirence of left and right
-   notDone = 1;
   
-  Serial.println("\t");
-  Serial.print("TOP ");
+  
+ /* Serial.println("\t");
+  Serial.print("TOP  ");
   Serial.print(top);
   Serial.print("\t");
   Serial.print("BOTTOM  ");
@@ -74,27 +66,12 @@ double SolarTracker(double counter){
   Serial.print(lef);
   Serial.print("\t");
   Serial.print("RIGHT  ");
-  Serial.println(rig); 
-  Serial.println("\t");
-  Serial.print (" LimitRight ");
-  Serial.print (ER);
-   Serial.print("\t");
-  Serial.print (" LimitLeft ");
-  Serial.print (EL);
-   Serial.print("\t");
-  Serial.print (" LimitUp ");
-  Serial.print (HB);
-   Serial.print("\t");
-  Serial.print (" LimitDown ");
-  Serial.print (HT);
-   Serial.print("\t");
-  Serial.print (" Limit Home ");
-  Serial.print (homed);
+  Serial.println(rig); */
  
   int sidesDone = 0;
   int topDone = 0;
-  break;
- while (notDone) {
+  
+ // while (notDone) {
  //   Serial.println("  not done  ");
  
   /*  Serial.print("Speed =   ");
@@ -112,15 +89,11 @@ double SolarTracker(double counter){
     {
       digitalWrite(relayup, LOW);
       digitalWrite(relaydown, HIGH);
-      Serial.println(rup);
-      Serial.println(rdown);
     }
     else if (top < bot) 
     {
      digitalWrite(relayup, HIGH);
-     digitalWrite(relaydown, LOW);
-    Serial.println(rup);
-    Serial.println(rdown);
+     digitalWrite(relaydown, LOW); 
     }
     else if (top == bot) // Equalized!
     {
@@ -153,9 +126,9 @@ double SolarTracker(double counter){
       
     }
        
-    if ( ( top == bot ) && (lef == rig) ) { notDone = 0;}
+ //   if ( ( top == bot ) && (lef == rig) ) { notDone = 0;}
     }
-   } break; delay (2000);
+ //  } break; delay (2000);
  
   /* Serial.print("    Tracker counter = ");     decommment to view values, otherwise it screws up my serial port from too many iterations
    Serial.println( counter );
@@ -173,7 +146,7 @@ double SolarTracker(double counter){
    Serial.println(rright, DEC);    */
  
 
- /* if (counter > 4998){  
+  if (counter > 4998){  
     Serial.print("Speed =   ");
     Serial.print(GPS.speed);
     Serial.print("\t");
@@ -208,8 +181,8 @@ double SolarTracker(double counter){
    Serial.print(rleft, DEC);
    Serial.print("\t");
    Serial.print("Relay right =   ");
-   Serial.println(rright, DEC); */
-   return counter ;} 
+   Serial.println(rright, DEC);
+   return counter ;}
 
     
   }  
