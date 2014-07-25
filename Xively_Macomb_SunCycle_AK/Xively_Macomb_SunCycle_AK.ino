@@ -53,7 +53,7 @@ Written by Kevin Townsend for Adafruit Industries with some heading example from
 MPL3115A2 myPressure;
 
 Adafruit_GPS GPS(&Serial1);
-boolean usingInterrupt = false;  // ADafruit GPS likes to use interrupts, which are not working well with our setup
+boolean usingInterrupt = true;  // was false 7/24/14-kc.limit ADafruit GPS likes to use interrupts, which are not working well with our setup
 //void useInterrupt(boolean);
 
 char ssid[] = "Mconnect"; //  your network SSID (name) 
@@ -100,8 +100,8 @@ char lonID[] = "Lon";
 #define DHTTYPE DHT11
 
 // Touch sensors
-#define LimitUp          28  // Is the panel facing forward      
-#define LimitDown        29  // Is the panel down
+#define limitUp          28  // Is the panel facing forward      
+#define limitlimitDown        29  // Is the panel down
 #define limitLeft        30  // Did we go max left
 #define limitRight       31  // Did we go max right
 #define limitHome        32  // is the solar panel at center     red 16ga    

@@ -9,17 +9,20 @@ void SolarTracker(){
   
   String side = "none";
   
-  int top = analogRead(ldtop); // Top of panel
+  int top = analogRead(ldtop); // Top light dependant sensor on Panel
   int bot = analogRead(ldbot); // Bottom of Panel
   int lef = analogRead(ldlef); // Left side of Panel
   int rig = analogRead(ldrig); //Right side of Panel
   int tol = 50;  // tolerance for levels between panels
-  int HB, HT, EL, ER;  // Home base, home top, extreme left, extreme right
-  int notDone = 1;
+  int HB = digitalRead(limitUp);
+  int HT = digitalRead(limitDown);
+  int EL = digitalRead(limitLeft); 
+  int ER = digitalRead(limitRight);  // Home base, home top, extreme left, extreme right
+  int notDone = true;
   int homed = digitalRead(limitHome);
   
   // If in motion ensure the system is down or put it down
-  if (GPS.speed > 0.30 && ( ( HB = digitalRead(LimitUp) == LOW) || (HT = digitalRead(LimitDown) == LOW ) ) ) {
+  if (GPS.speed > 0.30 && ( ( HB = digitalRead(limitUp) == LOW) || (HT = digitalRead(limitDown) == LOW ) ) ) {
     while (notDone == true) {
      if (HB == LOW) {
       if (side == "left") {
@@ -27,7 +30,7 @@ void SolarTracker(){
        digitalWrite(relayright, HIGH);
        delay(500);
        digitalWrite(relayright, LOW);
-       Serial.println (" Limit Right ");
+       Serial.println (" limit Right ");
        Serial.println (ER);
        readvals();
       } 
@@ -37,7 +40,7 @@ void SolarTracker(){
         delay (500);
         digitalWrite(relayleft, LOW);
         
-        Serial.println (" Limit Left ");
+        Serial.println (" limit Left ");
         Serial.println (EL);
         readvals();
       }
@@ -47,11 +50,11 @@ void SolarTracker(){
       digitalWrite(relaydown, HIGH); 
       delay (500);
       digitalWrite(relaydown, LOW);
-       Serial.println (" Limit Down ");
+       Serial.println (" limit Down ");
       Serial.println (HT);
      }
-     digitalRead(LimitUp);
-     digitalRead(LimitDown);
+     digitalRead(limitUp);
+     digitalRead(limitDown);
      if ( ( HT == HIGH ) && (HB == HIGH) ) { notDone = false;}
      
     } // end While
@@ -79,12 +82,12 @@ void SolarTracker(){
   Serial.print("BOTTOM  ");  Serial.print(ldbot);  Serial.print("\t");
   Serial.print("LEFT  ");    Serial.print(ldlef);  Serial.print("\t");
   Serial.print("RIGHT  ");   Serial.print(ldrig);  Serial.println("\t");
-  Serial.print (" LimitRight ");  Serial.print (ER);  Serial.print("\t");
-  Serial.print (" LimitLeft ");   Serial.print (EL);  Serial.println("\t");
-  Serial.print (" LimitUp ");     Serial.print (HB);  Serial.print("\t");
-  Serial.print (" LimitDown ");   Serial.print (HT);  Serial.println("\t");
+  Serial.print (" limitRight ");  Serial.print (ER);  Serial.print("\t");
+  Serial.print (" limitLeft ");   Serial.print (EL);  Serial.println("\t");
+  Serial.print (" limitUp ");     Serial.print (HB);  Serial.print("\t");
+  Serial.print (" limitDown ");   Serial.print (HT);  Serial.println("\t");
   digitalRead(homed);
-  Serial.print (" Limit Home ");  Serial.print (homed);
+  Serial.print (" limit Home ");  Serial.print (homed);
  
   int sidesDone = false;
   int topDone = false;
@@ -107,7 +110,7 @@ void SolarTracker(){
     {
       digitalWrite(relayup, LOW);
       digitalWrite(relaydown, HIGH);
-      delay (500);
+      delay (1000);
       digitalWrite(relaydown, LOW);
       Serial.println("Top is Greater");
      
@@ -116,7 +119,7 @@ void SolarTracker(){
     {
      digitalWrite(relaydown, LOW);
      digitalWrite(relayup, HIGH);
-     delay (500);
+     delay (1000);
      digitalWrite(relayup, LOW);
     Serial.println("Bottom is Greater");
    // Serial.println(rdown);
@@ -129,22 +132,23 @@ void SolarTracker(){
       digitalWrite(relaydown, LOW);
     }  // End up and downs
     
-    HB = digitalRead(LimitUp);
+    HB = digitalRead(limitUp);
     //if (-1*tol > dhoriz || dhoriz > tol){
     if (lef > rig && !sidesDone)
     {
-      if (EL = digitalRead(limitLeft) == HIGH) { sidesDone = 1; continue; }  // Cannot move left any more, side movement done
+      if (EL = digitalRead(limitLeft) == HIGH) { sidesDone = true; continue; }  // Cannot move left any more, side movement done
       if (HB == HIGH) { side = "left"; }
       Serial.print ("Left limit reached- moving right");
       digitalWrite(relayright, HIGH);
       digitalWrite(relayleft, LOW);
       delay (1000);
+      digitalWrite(relayright, LOW);limit
     }
     else if (lef < rig && !sidesDone)
     {
-      if (ER = digitalRead(limitRight) == HIGH) {sidesDone = 1; continue; } // Cannot move right any more, side movement done
+      if (ER = digitalRead(limitRight) == HIGH) {sidesDone = true; continue; } // Cannot move right any more, side movement done
       if (HB == HIGH) { side = "right"; }
-      Serial.println ("Moving to left");
+      Serial.println ("Right limit reached-moving to left");
       digitalWrite(relayleft, HIGH);
       digitalWrite(relayright, LOW);
       delay (1000);
@@ -224,8 +228,7 @@ void SolarTracker(){
   int bot = analogRead(ldbot); // Bottom of Panel
   int lef = analogRead(ldlef); // Left side of Panel
   int rig = analogRead(ldrig); //Right side of Panel
-  int tol = 75;   }             // Added a tolerance to photosensor values so we won't continually chase the tiny variations.
-   
+   }            
 
  
 
